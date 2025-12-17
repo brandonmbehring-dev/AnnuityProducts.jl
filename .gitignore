@@ -1,0 +1,29 @@
+# Julia
+*.jl.cov
+*.jl.*.cov
+*.jl.mem
+Manifest.toml
+
+# Build artifacts
+/deps/deps.jl
+/deps/build.log
+/deps/usr/
+/deps/downloads/
+*.dll
+*.dylib
+*.so
+
+# Documentation
+/docs/build/
+/docs/site/
+
+# IDE
+.idea/
+*.swp
+*.swo
+*~
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
