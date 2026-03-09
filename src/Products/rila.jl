@@ -14,9 +14,15 @@ References:
 - CONSTITUTION.md Section 3.2
 """
 
-using AnnuityCore: MonteCarloEngine, GBMParams, price_with_payoff, MCResult,
-                   BufferPayoff, FloorPayoff, black_scholes_call, black_scholes_put
-
+using AnnuityCore:
+    MonteCarloEngine,
+    GBMParams,
+    price_with_payoff,
+    MCResult,
+    BufferPayoff,
+    FloorPayoff,
+    black_scholes_call,
+    black_scholes_put
 
 """
     RILAPricer
@@ -36,20 +42,19 @@ struct RILAPricer
     volatility::Float64
 
     function RILAPricer(;
-        n_paths::Int = 100000,
-        seed::Union{Int, Nothing} = 42,
-        risk_free_rate::Float64 = 0.04,
-        dividend_yield::Float64 = 0.02,
-        volatility::Float64 = 0.20
+        n_paths::Int=100000,
+        seed::Union{Int,Nothing}=42,
+        risk_free_rate::Float64=0.04,
+        dividend_yield::Float64=0.02,
+        volatility::Float64=0.20,
     )
         risk_free_rate >= 0 || throw(ArgumentError("CRITICAL: risk_free_rate must be >= 0"))
         volatility >= 0 || throw(ArgumentError("CRITICAL: volatility must be >= 0"))
 
-        engine = MonteCarloEngine(n_paths=n_paths, seed=seed)
+        engine = MonteCarloEngine(; n_paths=n_paths, seed=seed)
         new(engine, risk_free_rate, dividend_yield, volatility)
     end
 end
-
 
 """
     RILAPriceResult
@@ -79,7 +84,6 @@ struct RILAPriceResult
     term_years::Int
 end
 
-
 """
     price(pricer::RILAPricer, product; premium=100.0) -> RILAPriceResult
 
@@ -99,15 +103,17 @@ Price a RILA product.
 # Returns
 - `RILAPriceResult`: Pricing results
 """
-function price(pricer::RILAPricer, product; premium::Float64 = 100.0)
+function price(pricer::RILAPricer, product; premium::Float64=100.0)
     term_years = product.term_years
     term_years > 0 || throw(ArgumentError("CRITICAL: term_years must be > 0"))
 
     # Determine protection type
     protection_type = product.protection_type
-    protection_type in (:buffer, :floor) || throw(ArgumentError(
-        "CRITICAL: protection_type must be :buffer or :floor, got $protection_type"
-    ))
+    protection_type in (:buffer, :floor) || throw(
+        ArgumentError(
+            "CRITICAL: protection_type must be :buffer or :floor, got $protection_type"
+        ),
+    )
 
     is_buffer = protection_type == :buffer
 
@@ -126,7 +132,7 @@ function price(pricer::RILAPricer, product; premium::Float64 = 100.0)
         pricer.risk_free_rate,
         pricer.dividend_yield,
         pricer.volatility,
-        Float64(term_years)
+        Float64(term_years),
     )
 
     # Price protection component
@@ -135,9 +141,7 @@ function price(pricer::RILAPricer, product; premium::Float64 = 100.0)
     )
 
     # Price upside component
-    upside_value = price_upside(
-        pricer, cap_rate, Float64(term_years), premium
-    )
+    upside_value = price_upside(pricer, cap_rate, Float64(term_years), premium)
 
     # Calculate expected return via MC
     expected_return = calculate_expected_return(
@@ -163,10 +167,9 @@ function price(pricer::RILAPricer, product; premium::Float64 = 100.0)
         max_loss,
         breakeven_return,
         fair_cap,
-        term_years
+        term_years,
     )
 end
-
 
 """
     price_protection(pricer, is_buffer, buffer_rate, term_years, premium) -> Float64
@@ -182,7 +185,7 @@ function price_protection(
     is_buffer::Bool,
     buffer_rate::Float64,
     term_years::Float64,
-    premium::Float64
+    premium::Float64,
 )
     spot = premium
     r = pricer.risk_free_rate
@@ -210,7 +213,6 @@ function price_protection(
     return protection / spot * premium
 end
 
-
 """
     price_upside(pricer, cap_rate, term_years, premium) -> Float64
 
@@ -220,9 +222,9 @@ Price the capped upside component.
 """
 function price_upside(
     pricer::RILAPricer,
-    cap_rate::Union{Float64, Nothing},
+    cap_rate::Union{Float64,Nothing},
     term_years::Float64,
-    premium::Float64
+    premium::Float64,
 )
     spot = premium
     r = pricer.risk_free_rate
@@ -245,7 +247,6 @@ function price_upside(
     return upside / spot * premium
 end
 
-
 """
     calculate_expected_return(pricer, is_buffer, buffer_rate, cap_rate, term_years) -> Float64
 
@@ -255,15 +256,15 @@ function calculate_expected_return(
     pricer::RILAPricer,
     is_buffer::Bool,
     buffer_rate::Float64,
-    cap_rate::Union{Float64, Nothing},
-    term_years::Float64
+    cap_rate::Union{Float64,Nothing},
+    term_years::Float64,
 )
     params = GBMParams(
         100.0,  # Normalized spot
         pricer.risk_free_rate,
         pricer.dividend_yield,
         pricer.volatility,
-        term_years
+        term_years,
     )
 
     # Create appropriate payoff
@@ -283,7 +284,6 @@ function calculate_expected_return(
     return mc_result.price / 100.0
 end
 
-
 """
     calculate_breakeven(is_buffer, buffer_rate) -> Float64
 
@@ -300,7 +300,6 @@ function calculate_breakeven(is_buffer::Bool, buffer_rate::Float64)
     end
 end
 
-
 """
     calculate_fair_cap(pricer, buffer_rate, term_years) -> Float64
 
@@ -311,11 +310,7 @@ equals value of cap forgone.
 
 Uses bisection search to find cap where PV with protection equals market PV.
 """
-function calculate_fair_cap(
-    pricer::RILAPricer,
-    buffer_rate::Float64,
-    term_years::Float64
-)
+function calculate_fair_cap(pricer::RILAPricer, buffer_rate::Float64, term_years::Float64)
     spot = 100.0
     r = pricer.risk_free_rate
     q = pricer.dividend_yield
@@ -364,7 +359,6 @@ function calculate_fair_cap(
     return (low + high) / 2.0
 end
 
-
 """
     compare_buffer_vs_floor(pricer, buffer_rate, floor_rate, cap_rate, term_years)
 
@@ -377,32 +371,29 @@ function compare_buffer_vs_floor(
     buffer_rate::Float64,
     floor_rate::Float64,
     cap_rate::Float64,
-    term_years::Int
+    term_years::Int,
 )
     # Create mock products
     buffer_product = (
-        company = "Compare",
-        product_name = "Buffer",
-        protection_type = :buffer,
-        buffer_rate = buffer_rate,
-        cap_rate = cap_rate,
-        term_years = term_years
+        company="Compare",
+        product_name="Buffer",
+        protection_type=:buffer,
+        buffer_rate=buffer_rate,
+        cap_rate=cap_rate,
+        term_years=term_years,
     )
 
     floor_product = (
-        company = "Compare",
-        product_name = "Floor",
-        protection_type = :floor,
-        buffer_rate = floor_rate,  # Floor level stored in buffer_rate field
-        cap_rate = cap_rate,
-        term_years = term_years
+        company="Compare",
+        product_name="Floor",
+        protection_type=:floor,
+        buffer_rate=floor_rate,  # Floor level stored in buffer_rate field
+        cap_rate=cap_rate,
+        term_years=term_years,
     )
 
     buffer_result = price(pricer, buffer_product)
     floor_result = price(pricer, floor_product)
 
-    return (
-        buffer = buffer_result,
-        floor = floor_result
-    )
+    return (buffer=buffer_result, floor=floor_result)
 end

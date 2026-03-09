@@ -18,7 +18,6 @@ References:
 - SOA 2006 Deferred Annuity Persistency Study
 """
 
-
 """
     LapseAssumptions
 
@@ -39,22 +38,24 @@ struct LapseAssumptions
     surrender_period_reduction::Float64
 
     function LapseAssumptions(;
-        base_annual_lapse::Float64 = 0.05,
-        min_lapse::Float64 = 0.01,
-        max_lapse::Float64 = 0.25,
-        sensitivity::Float64 = 1.0,
-        surrender_period_reduction::Float64 = 0.2
+        base_annual_lapse::Float64=0.05,
+        min_lapse::Float64=0.01,
+        max_lapse::Float64=0.25,
+        sensitivity::Float64=1.0,
+        surrender_period_reduction::Float64=0.2,
     )
         base_annual_lapse >= 0 || throw(ArgumentError("base_annual_lapse must be >= 0"))
         min_lapse >= 0 || throw(ArgumentError("min_lapse must be >= 0"))
         max_lapse >= min_lapse || throw(ArgumentError("max_lapse must be >= min_lapse"))
         sensitivity >= 0 || throw(ArgumentError("sensitivity must be >= 0"))
-        0 <= surrender_period_reduction <= 1 || throw(ArgumentError("surrender_period_reduction must be in [0, 1]"))
+        0 <= surrender_period_reduction <= 1 ||
+            throw(ArgumentError("surrender_period_reduction must be in [0, 1]"))
 
-        new(base_annual_lapse, min_lapse, max_lapse, sensitivity, surrender_period_reduction)
+        new(
+            base_annual_lapse, min_lapse, max_lapse, sensitivity, surrender_period_reduction
+        )
     end
 end
-
 
 """
     LapseResult
@@ -71,7 +72,6 @@ struct LapseResult
     moneyness::Float64
     adjustment_factor::Float64
 end
-
 
 """
     DynamicLapseModel
@@ -92,7 +92,6 @@ struct DynamicLapseModel
 end
 
 DynamicLapseModel() = DynamicLapseModel(LapseAssumptions())
-
 
 """
     calculate_lapse(model, gwb, av; surrender_period_complete=false) -> LapseResult
@@ -117,7 +116,7 @@ function calculate_lapse(
     model::DynamicLapseModel,
     gwb::Float64,
     av::Float64;
-    surrender_period_complete::Bool = false
+    surrender_period_complete::Bool=false,
 )
     assumptions = model.assumptions
 
@@ -156,7 +155,6 @@ function calculate_lapse(
     return LapseResult(lapse_rate, moneyness, adjustment_factor)
 end
 
-
 """
     calculate_monthly_lapse(model, gwb, av; surrender_period_complete=false) -> Float64
 
@@ -171,13 +169,14 @@ function calculate_monthly_lapse(
     model::DynamicLapseModel,
     gwb::Float64,
     av::Float64;
-    surrender_period_complete::Bool = false
+    surrender_period_complete::Bool=false,
 )
-    result = calculate_lapse(model, gwb, av; surrender_period_complete=surrender_period_complete)
+    result = calculate_lapse(
+        model, gwb, av; surrender_period_complete=surrender_period_complete
+    )
     # Convert annual to monthly
     return 1.0 - (1.0 - result.lapse_rate) ^ (1.0 / 12.0)
 end
-
 
 """
     calculate_path_lapses(model, gwb_path, av_path; surrender_period_ends=0) -> Vector{Float64}
@@ -197,24 +196,27 @@ function calculate_path_lapses(
     model::DynamicLapseModel,
     gwb_path::Vector{Float64},
     av_path::Vector{Float64};
-    surrender_period_ends::Int = 0
+    surrender_period_ends::Int=0,
 )
-    length(gwb_path) == length(av_path) || throw(ArgumentError(
-        "Path lengths must match: gwb=$(length(gwb_path)), av=$(length(av_path))"
-    ))
+    length(gwb_path) == length(av_path) || throw(
+        ArgumentError(
+            "Path lengths must match: gwb=$(length(gwb_path)), av=$(length(av_path))"
+        ),
+    )
 
     n_steps = length(gwb_path)
     lapse_rates = Vector{Float64}(undef, n_steps)
 
     for t in 1:n_steps
         surrender_complete = t > surrender_period_ends
-        result = calculate_lapse(model, gwb_path[t], av_path[t]; surrender_period_complete=surrender_complete)
+        result = calculate_lapse(
+            model, gwb_path[t], av_path[t]; surrender_period_complete=surrender_complete
+        )
         lapse_rates[t] = result.lapse_rate
     end
 
     return lapse_rates
 end
-
 
 """
     lapse_survival_probability(lapse_rates; dt=1.0) -> Vector{Float64}
@@ -234,7 +236,7 @@ Calculate cumulative survival (persistency) probability from lapse rates.
 # Note
 Named `lapse_survival_probability` to distinguish from mortality-based survival.
 """
-function lapse_survival_probability(lapse_rates::Vector{Float64}; dt::Float64 = 1.0)
+function lapse_survival_probability(lapse_rates::Vector{Float64}; dt::Float64=1.0)
     n_steps = length(lapse_rates)
     survival = Vector{Float64}(undef, n_steps + 1)
     survival[1] = 1.0  # Survival at t=0
@@ -246,7 +248,6 @@ function lapse_survival_probability(lapse_rates::Vector{Float64}; dt::Float64 = 
 
     return survival
 end
-
 
 """
     apply_lapse_to_cashflows(cashflows, survival) -> Vector{Float64}
@@ -263,13 +264,12 @@ Weight cashflows by survival probability (lapse-adjusted expected value).
 function apply_lapse_to_cashflows(cashflows::Vector{Float64}, survival::Vector{Float64})
     n = length(cashflows)
     # survival has n+1 elements (including t=0); use survival[2:end] for cashflows at t=1:n
-    length(survival) >= n + 1 || throw(ArgumentError(
-        "Survival vector too short: need $(n+1), got $(length(survival))"
-    ))
+    length(survival) >= n + 1 || throw(
+        ArgumentError("Survival vector too short: need $(n+1), got $(length(survival))")
+    )
 
-    return cashflows .* survival[2:n+1]
+    return cashflows .* survival[2:(n + 1)]
 end
-
 
 """
     effective_lapse_rate(model, gwb_av_ratio; surrender_period_complete=false) -> Float64
@@ -294,11 +294,11 @@ effective_lapse_rate(model, 0.8)  # 20% OTM → higher lapse
 ```
 """
 function effective_lapse_rate(
-    model::DynamicLapseModel,
-    gwb_av_ratio::Float64;
-    surrender_period_complete::Bool = false
+    model::DynamicLapseModel, gwb_av_ratio::Float64; surrender_period_complete::Bool=false
 )
     # Use gwb=ratio, av=1.0 to get effective rate
-    result = calculate_lapse(model, gwb_av_ratio, 1.0; surrender_period_complete=surrender_period_complete)
+    result = calculate_lapse(
+        model, gwb_av_ratio, 1.0; surrender_period_complete=surrender_period_complete
+    )
     return result.lapse_rate
 end

@@ -28,8 +28,8 @@ Simulate GLWB contract over multiple paths.
 function simulate_glwb(
     contract::GLWBContract,
     monthly_returns::Matrix{Float64};
-    start_withdrawal_month::Union{Int, Nothing}=nothing,
-    mortality_mode::Symbol=:deterministic
+    start_withdrawal_month::Union{Int,Nothing}=nothing,
+    mortality_mode::Symbol=:deterministic,
 )
     n_paths, n_months = size(monthly_returns)
 
@@ -48,9 +48,7 @@ function simulate_glwb(
             take_withdrawal = month >= withdrawal_start
 
             withdrawal, fee = step_month!(
-                state, contract,
-                monthly_returns[path_idx, month],
-                take_withdrawal
+                state, contract, monthly_returns[path_idx, month], take_withdrawal
             )
 
             total_fees += fee
@@ -66,13 +64,12 @@ function simulate_glwb(
             total_withdrawals,
             total_fees,
             months_in_payout,
-            state.account_value <= 0.0
+            state.account_value <= 0.0,
         )
     end
 
     return results
 end
-
 
 """
     simulate_single_path(contract, monthly_returns; start_withdrawal_month=nothing) -> GLWBResult
@@ -92,14 +89,15 @@ Convenience function for single-path simulation.
 function simulate_single_path(
     contract::GLWBContract,
     monthly_returns::Vector{Float64};
-    start_withdrawal_month::Union{Int, Nothing}=nothing
+    start_withdrawal_month::Union{Int,Nothing}=nothing,
 )
     # Convert to matrix with single row
     returns_matrix = reshape(monthly_returns, 1, :)
-    results = simulate_glwb(contract, returns_matrix; start_withdrawal_month=start_withdrawal_month)
+    results = simulate_glwb(
+        contract, returns_matrix; start_withdrawal_month=start_withdrawal_month
+    )
     return results[1]
 end
-
 
 """
     calculate_glwb_value(contract, paths, discount_rate; kwargs...) -> NamedTuple
@@ -120,10 +118,7 @@ Named tuple with:
 - `n_paths::Int`: Number of paths simulated
 """
 function calculate_glwb_value(
-    contract::GLWBContract,
-    paths::Matrix{Float64},
-    discount_rate::Float64;
-    kwargs...
+    contract::GLWBContract, paths::Matrix{Float64}, discount_rate::Float64; kwargs...
 )
     results = simulate_glwb(contract, paths; kwargs...)
     n_paths = length(results)
@@ -141,9 +136,9 @@ function calculate_glwb_value(
     pv_fees = mean([r.total_fees for r in results]) * avg_df
 
     return (
-        pv_withdrawals = pv_withdrawals,
-        pv_fees = pv_fees,
-        net_cost = pv_withdrawals - pv_fees,
-        n_paths = n_paths,
+        pv_withdrawals=pv_withdrawals,
+        pv_fees=pv_fees,
+        net_cost=pv_withdrawals - pv_fees,
+        n_paths=n_paths,
     )
 end

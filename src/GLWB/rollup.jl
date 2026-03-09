@@ -32,9 +32,7 @@ gwb = calculate_rollup_benefit(100000.0, 0.05, 10)
 ```
 """
 function calculate_rollup_benefit(
-    initial_premium::Float64,
-    rollup_rate::Float64,
-    years::Int
+    initial_premium::Float64, rollup_rate::Float64, years::Int
 )
     initial_premium > 0 || throw(ArgumentError("CRITICAL: initial_premium must be > 0"))
     rollup_rate >= 0 || throw(ArgumentError("CRITICAL: rollup_rate must be >= 0"))
@@ -42,7 +40,6 @@ function calculate_rollup_benefit(
 
     return initial_premium * (1.0 + rollup_rate)^years
 end
-
 
 """
     calculate_monthly_rollup_benefit(initial_premium, annual_rollup_rate, months) -> Float64
@@ -64,18 +61,16 @@ where:
 - `Float64`: Guaranteed withdrawal base after monthly rollup
 """
 function calculate_monthly_rollup_benefit(
-    initial_premium::Float64,
-    annual_rollup_rate::Float64,
-    months::Int
+    initial_premium::Float64, annual_rollup_rate::Float64, months::Int
 )
     initial_premium > 0 || throw(ArgumentError("CRITICAL: initial_premium must be > 0"))
-    annual_rollup_rate >= 0 || throw(ArgumentError("CRITICAL: annual_rollup_rate must be >= 0"))
+    annual_rollup_rate >= 0 ||
+        throw(ArgumentError("CRITICAL: annual_rollup_rate must be >= 0"))
     months >= 0 || throw(ArgumentError("CRITICAL: months must be >= 0"))
 
     monthly_rate = annual_rollup_rate / 12.0
     return initial_premium * (1.0 + monthly_rate)^months
 end
-
 
 """
     calculate_annual_withdrawal(gwb, withdrawal_rate) -> Float64

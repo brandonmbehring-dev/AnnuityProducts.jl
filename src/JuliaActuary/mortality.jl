@@ -6,15 +6,13 @@ Provides access to SOA mortality tables for actuarial calculations.
 
 using MortalityTables: get_SOA_table, UltimateTable, SelectUltimateTable
 
-
 # Common SOA table names (with exact characters)
-const COMMON_TABLES = Dict{Symbol, String}(
+const COMMON_TABLES = Dict{Symbol,String}(
     :IAM_2012_Male => "2012 IAM Period Table – Male, ANB",
     :IAM_2012_Female => "2012 IAM Period Table – Female, ANB",
     :CSO_2017_Male => "2017 Loaded CSO Preferred Structure ALB – Male, ANB",
     :CSO_2017_Female => "2017 Loaded CSO Preferred Structure ALB – Female, ANB",
 )
-
 
 """
     load_mortality_table(table_name::Union{String, Symbol}) -> MortalityTable
@@ -40,8 +38,10 @@ function load_mortality_table(table_name::Symbol)
     if haskey(COMMON_TABLES, table_name)
         return get_SOA_table(COMMON_TABLES[table_name])
     else
-        error("CRITICAL: Unknown table shortcut '$table_name'. " *
-              "Available: $(keys(COMMON_TABLES))")
+        error(
+            "CRITICAL: Unknown table shortcut '$table_name'. " *
+            "Available: $(keys(COMMON_TABLES))",
+        )
     end
 end
 
@@ -52,7 +52,6 @@ function load_mortality_table(table_name::String)
         error("CRITICAL: Failed to load mortality table '$table_name'. Error: $e")
     end
 end
-
 
 """
     get_qx(table, age::Int) -> Float64
@@ -80,7 +79,6 @@ function get_qx(table, age::Int)
         error("CRITICAL: Unknown table type $(typeof(table))")
     end
 end
-
 
 """
     survival_probability(table, age::Int, years::Int) -> Float64
@@ -112,7 +110,7 @@ function survival_probability(table, age::Int, years::Int)
     end
 
     prob = 1.0
-    for i in 0:(years-1)
+    for i in 0:(years - 1)
         qx = get_qx(table, age + i)
         prob *= (1.0 - qx)
         if prob <= 0.0
@@ -121,7 +119,6 @@ function survival_probability(table, age::Int, years::Int)
     end
     return prob
 end
-
 
 """
     calc_life_expectancy(table, age::Int; max_age::Int=120) -> Float64
@@ -153,7 +150,6 @@ function calc_life_expectancy(table, age::Int; max_age::Int=120)
     return expectation
 end
 
-
 """
     annuity_factor(table, age::Int, rate::Float64; term::Union{Int, Nothing}=nothing, max_age::Int=120) -> Float64
 
@@ -179,7 +175,9 @@ a_65 = annuity_factor(table, 65, 0.05)  # Whole life annuity at 65
 a_65_10 = annuity_factor(table, 65, 0.05; term=10)  # 10-year term
 ```
 """
-function annuity_factor(table, age::Int, rate::Float64; term::Union{Int, Nothing}=nothing, max_age::Int=120)
+function annuity_factor(
+    table, age::Int, rate::Float64; term::Union{Int,Nothing}=nothing, max_age::Int=120
+)
     age >= 0 || throw(ArgumentError("CRITICAL: age must be >= 0"))
     rate >= 0 || throw(ArgumentError("CRITICAL: rate must be >= 0"))
 
@@ -193,7 +191,6 @@ function annuity_factor(table, age::Int, rate::Float64; term::Union{Int, Nothing
     end
     return annuity_pv
 end
-
 
 """
     list_available_tables() -> Vector{Symbol}

@@ -40,6 +40,8 @@ jobs:
 
       # Install dependencies from GitHub
       - name: Install dependencies
+        env:
+          JULIA_PKG_USE_CLI_GIT: "true"
         run: |
           julia --project=. -e '
             using Pkg
@@ -77,6 +79,8 @@ jobs:
           git config --global url."https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/".insteadOf "https://github.com/"
 
       - name: Install dependencies
+        env:
+          JULIA_PKG_USE_CLI_GIT: "true"
         run: |
           julia --project=. -e '
             using Pkg

@@ -19,7 +19,6 @@ References:
 - docs/knowledge/domain/mgsv_mva.md
 """
 
-
 """
     MYGAPricer
 
@@ -31,16 +30,16 @@ Pricer for Multi-Year Guaranteed Annuities.
 - `mgsv_accumulation_rate::Float64`: MGSV accumulation rate (default 0.01 = 1%)
 """
 struct MYGAPricer
-    discount_rate::Union{Float64, Nothing}
+    discount_rate::Union{Float64,Nothing}
     mgsv_base_rate::Float64
     mgsv_accumulation_rate::Float64
 
     function MYGAPricer(;
-        discount_rate::Union{Float64, Nothing} = nothing,
-        flat_rate::Union{Float64, Nothing} = nothing,  # Alias for discount_rate
-        mgsv_base_rate::Float64 = 0.875,
-        mgsv_accumulation_rate::Float64 = 0.01,
-        yield_curve = nothing  # Placeholder for future FinanceModels.jl
+        discount_rate::Union{Float64,Nothing}=nothing,
+        flat_rate::Union{Float64,Nothing}=nothing,  # Alias for discount_rate
+        mgsv_base_rate::Float64=0.875,
+        mgsv_accumulation_rate::Float64=0.01,
+        yield_curve=nothing,  # Placeholder for future FinanceModels.jl
     )
         # Use flat_rate as alias for discount_rate (backwards compatibility)
         rate = discount_rate !== nothing ? discount_rate : flat_rate
@@ -48,7 +47,6 @@ struct MYGAPricer
         new(rate, mgsv_base_rate, mgsv_accumulation_rate)
     end
 end
-
 
 """
     MYGAPriceResult
@@ -116,8 +114,8 @@ result = price(pricer, product; principal=100000.0, discount_rate=0.04)
 function price(
     pricer::MYGAPricer,
     product;
-    principal::Float64 = 100000.0,
-    discount_rate::Union{Float64, Nothing} = nothing
+    principal::Float64=100000.0,
+    discount_rate::Union{Float64,Nothing}=nothing,
 )
     # Validate inputs
     principal > 0 || throw(ArgumentError("CRITICAL: principal must be > 0"))
@@ -170,10 +168,9 @@ function price(
         principal,
         fixed_rate,
         disc,
-        years
+        years,
     )
 end
-
 
 """
     calculate_spread_bps(product, treasury_rate) -> Float64
@@ -198,7 +195,6 @@ function calculate_spread_bps(product, treasury_rate::Float64)
     return spread_decimal * 10000.0  # Convert to basis points
 end
 
-
 """
     calculate_yield_to_maturity(maturity_value, present_value, years) -> Float64
 
@@ -214,14 +210,15 @@ Calculate implied yield to maturity given prices.
 # Returns
 - `Float64`: Yield to maturity (decimal)
 """
-function calculate_yield_to_maturity(maturity_value::Float64, present_value::Float64, years::Int)
+function calculate_yield_to_maturity(
+    maturity_value::Float64, present_value::Float64, years::Int
+)
     present_value > 0 || throw(ArgumentError("CRITICAL: present_value must be > 0"))
     maturity_value > 0 || throw(ArgumentError("CRITICAL: maturity_value must be > 0"))
     years > 0 || throw(ArgumentError("CRITICAL: years must be > 0"))
 
     return (maturity_value / present_value)^(1.0 / years) - 1.0
 end
-
 
 """
     price_sensitivity(result::MYGAPriceResult, rate_shift::Float64) -> Float64

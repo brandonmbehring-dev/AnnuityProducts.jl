@@ -37,19 +37,27 @@ struct GLWBContract
         rollup_rate::Float64,
         rollup_years::Int,
         rider_fee::Float64,
-        fee_basis::Symbol=:account_value
+        fee_basis::Symbol=:account_value,
     )
         initial_premium > 0 || throw(ArgumentError("CRITICAL: initial_premium must be > 0"))
-        withdrawal_rate >= 0 || throw(ArgumentError("CRITICAL: withdrawal_rate must be >= 0"))
+        withdrawal_rate >= 0 ||
+            throw(ArgumentError("CRITICAL: withdrawal_rate must be >= 0"))
         rollup_rate >= 0 || throw(ArgumentError("CRITICAL: rollup_rate must be >= 0"))
         rollup_years >= 0 || throw(ArgumentError("CRITICAL: rollup_years must be >= 0"))
         rider_fee >= 0 || throw(ArgumentError("CRITICAL: rider_fee must be >= 0"))
-        fee_basis in (:account_value, :gwb) || throw(ArgumentError("CRITICAL: fee_basis must be :account_value or :gwb"))
+        fee_basis in (:account_value, :gwb) ||
+            throw(ArgumentError("CRITICAL: fee_basis must be :account_value or :gwb"))
 
-        new(initial_premium, withdrawal_rate, rollup_rate, rollup_years, rider_fee, fee_basis)
+        new(
+            initial_premium,
+            withdrawal_rate,
+            rollup_rate,
+            rollup_years,
+            rider_fee,
+            fee_basis,
+        )
     end
 end
-
 
 """
     GLWBState
@@ -78,10 +86,9 @@ function initial_state(contract::GLWBContract)
         contract.initial_premium,  # gwb = initial premium
         0.0,                       # cumulative_withdrawals
         0,                         # month
-        false                      # not in payout phase yet
+        false,                      # not in payout phase yet
     )
 end
-
 
 """
     GLWBResult
@@ -104,7 +111,6 @@ struct GLWBResult
     months_in_payout::Int
     account_depleted::Bool
 end
-
 
 """
     step_month!(state, contract, monthly_return, take_withdrawal) -> (withdrawal, fee)
@@ -129,10 +135,7 @@ Order of operations per month:
 5. Update GWB high-water mark
 """
 function step_month!(
-    state::GLWBState,
-    contract::GLWBContract,
-    monthly_return::Float64,
-    take_withdrawal::Bool
+    state::GLWBState, contract::GLWBContract, monthly_return::Float64, take_withdrawal::Bool
 )
     state.month += 1
 

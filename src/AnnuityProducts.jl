@@ -58,7 +58,8 @@ include("JuliaActuary/yield_curves.jl")
 # GLWB exports
 export GLWBContract, GLWBState, GLWBResult
 export step_month!, simulate_glwb, initial_state
-export calculate_rollup_benefit, calculate_monthly_rollup_benefit, calculate_annual_withdrawal
+export calculate_rollup_benefit,
+    calculate_monthly_rollup_benefit, calculate_annual_withdrawal
 # GLWB pricer exports
 export GLWBPricingConfig, GLWBPricingResult, price_glwb
 export soa_2012_iam_qx

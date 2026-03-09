@@ -19,7 +19,6 @@ References:
 using StableRNGs
 using Statistics: mean, std
 
-
 """
     GLWBPricingConfig
 
@@ -53,22 +52,22 @@ struct GLWBPricingConfig
     fee_rate::Float64
     steps_per_year::Int
     n_paths::Int
-    seed::Union{Int, Nothing}
+    seed::Union{Int,Nothing}
 
     function GLWBPricingConfig(;
         premium::Float64,
         age::Int,
         r::Float64,
         sigma::Float64,
-        max_age::Int = 100,
-        rollup_type::Symbol = :compound,
-        rollup_rate::Float64 = 0.05,
-        rollup_cap_years::Int = 10,
-        withdrawal_rate::Float64 = 0.05,
-        fee_rate::Float64 = 0.01,
-        steps_per_year::Int = 1,
-        n_paths::Int = 1000,
-        seed::Union{Int, Nothing} = nothing
+        max_age::Int=100,
+        rollup_type::Symbol=:compound,
+        rollup_rate::Float64=0.05,
+        rollup_cap_years::Int=10,
+        withdrawal_rate::Float64=0.05,
+        fee_rate::Float64=0.01,
+        steps_per_year::Int=1,
+        n_paths::Int=1000,
+        seed::Union{Int,Nothing}=nothing,
     )
         premium > 0 || throw(ArgumentError("CRITICAL: premium must be > 0"))
         age >= 0 || throw(ArgumentError("CRITICAL: age must be >= 0"))
@@ -76,13 +75,26 @@ struct GLWBPricingConfig
         sigma >= 0 || throw(ArgumentError("CRITICAL: sigma must be >= 0"))
         steps_per_year >= 1 || throw(ArgumentError("CRITICAL: steps_per_year must be >= 1"))
         n_paths >= 1 || throw(ArgumentError("CRITICAL: n_paths must be >= 1"))
-        rollup_type in (:compound, :simple) || throw(ArgumentError("CRITICAL: rollup_type must be :compound or :simple"))
+        rollup_type in (:compound, :simple) ||
+            throw(ArgumentError("CRITICAL: rollup_type must be :compound or :simple"))
 
-        new(premium, age, r, sigma, max_age, rollup_type, rollup_rate,
-            rollup_cap_years, withdrawal_rate, fee_rate, steps_per_year, n_paths, seed)
+        new(
+            premium,
+            age,
+            r,
+            sigma,
+            max_age,
+            rollup_type,
+            rollup_rate,
+            rollup_cap_years,
+            withdrawal_rate,
+            fee_rate,
+            steps_per_year,
+            n_paths,
+            seed,
+        )
     end
 end
-
 
 """
     GLWBPricingResult
@@ -112,7 +124,6 @@ struct GLWBPricingResult
     mean_lapse_year::Float64
 end
 
-
 """
     SinglePathResult
 
@@ -125,7 +136,6 @@ struct SinglePathResult
     final_av::Float64
     final_gwb::Float64
 end
-
 
 # ============================================================================
 # Mortality Tables (Simplified SOA 2012 IAM approximation)
@@ -156,7 +166,6 @@ function soa_2012_iam_qx(age::Int)
     qx = A + B * exp(C * age)
     return min(qx, 1.0)  # Cap at 1.0
 end
-
 
 # ============================================================================
 # Path Simulation
@@ -268,15 +277,8 @@ function simulate_single_glwb_path(config::GLWBPricingConfig, rng::AbstractRNG)
         end
     end
 
-    return SinglePathResult(
-        pv_insurer_payments,
-        ruin_year,
-        death_year,
-        av,
-        gwb
-    )
+    return SinglePathResult(pv_insurer_payments, ruin_year, death_year, av, gwb)
 end
-
 
 """
     price_glwb(config::GLWBPricingConfig) -> GLWBPricingResult
@@ -329,10 +331,9 @@ function price_glwb(config::GLWBPricingConfig)
         prob_ruin,                      # prob_ruin
         mean_ruin_year,                 # mean_ruin_year
         prob_lapse,                     # prob_lapse
-        mean_lapse_year                 # mean_lapse_year
+        mean_lapse_year,                 # mean_lapse_year
     )
 end
-
 
 """
     price_glwb(;kwargs...) -> GLWBPricingResult
@@ -356,7 +357,7 @@ result = price_glwb(
 )
 ```
 """
-function price_glwb(;kwargs...)
-    config = GLWBPricingConfig(;kwargs...)
+function price_glwb(; kwargs...)
+    config = GLWBPricingConfig(; kwargs...)
     return price_glwb(config)
 end

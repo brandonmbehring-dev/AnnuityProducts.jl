@@ -40,15 +40,18 @@ rate_5y = curve(5.0)  # Get rate at 5 years
 # Notes
 Requires FinanceModels.jl to be installed.
 """
-function fit_yield_curve(rates::Vector{Tuple{Float64, Float64}}; method::Symbol=:nelson_siegel)
+function fit_yield_curve(
+    rates::Vector{Tuple{Float64,Float64}}; method::Symbol=:nelson_siegel
+)
     # TODO: Implement when FinanceModels.jl integration is ready
     # using FinanceModels
     # return FinanceModels.fit(NelsonSiegel(), rates)
 
-    error("FinanceModels.jl integration not yet implemented. " *
-          "Install with: using Pkg; Pkg.add(\"FinanceModels\")")
+    error(
+        "FinanceModels.jl integration not yet implemented. " *
+        "Install with: using Pkg; Pkg.add(\"FinanceModels\")",
+    )
 end
-
 
 """
     discount_factor(curve, t::Float64) -> Float64
@@ -81,7 +84,6 @@ function discount_factor(curve, t::Float64)
     error("FinanceModels.jl integration not yet implemented")
 end
 
-
 """
     forward_rate(curve, t1::Float64, t2::Float64) -> Float64
 
@@ -105,7 +107,6 @@ function forward_rate(curve, t1::Float64, t2::Float64)
     error("FinanceModels.jl integration not yet implemented")
 end
 
-
 """
     present_value(curve, cashflows::Vector{Tuple{Float64, Float64}}) -> Float64
 
@@ -125,13 +126,12 @@ cashflows = [(1.0, 1000.0), (2.0, 1000.0), (3.0, 1000.0), (4.0, 1000.0), (5.0, 1
 pv = present_value(curve, cashflows)
 ```
 """
-function present_value(curve, cashflows::Vector{Tuple{Float64, Float64}})
+function present_value(curve, cashflows::Vector{Tuple{Float64,Float64}})
     # TODO: Implement with real curve
     # return sum(amount * discount_factor(curve, t) for (t, amount) in cashflows)
 
     error("FinanceModels.jl integration not yet implemented")
 end
-
 
 # ============================================================================
 # Simple flat rate implementations for testing
@@ -161,6 +161,6 @@ function forward_rate(curve::FlatRateCurve, t1::Float64, t2::Float64)
 end
 
 """Present value using flat curve."""
-function present_value(curve::FlatRateCurve, cashflows::Vector{Tuple{Float64, Float64}})
+function present_value(curve::FlatRateCurve, cashflows::Vector{Tuple{Float64,Float64}})
     return sum(amount * discount_factor(curve, t) for (t, amount) in cashflows)
 end

@@ -19,10 +19,16 @@ References:
 - CONSTITUTION.md Section 3.2
 """
 
-using AnnuityCore: MonteCarloEngine, GBMParams, price_with_payoff, MCResult,
-                   CappedCallPayoff, ParticipationPayoff, SpreadPayoff, TriggerPayoff,
-                   black_scholes_call
-
+using AnnuityCore:
+    MonteCarloEngine,
+    GBMParams,
+    price_with_payoff,
+    MCResult,
+    CappedCallPayoff,
+    ParticipationPayoff,
+    SpreadPayoff,
+    TriggerPayoff,
+    black_scholes_call
 
 """
     FIAPricer
@@ -44,22 +50,22 @@ struct FIAPricer
     option_budget_pct::Float64
 
     function FIAPricer(;
-        n_paths::Int = 100000,
-        seed::Union{Int, Nothing} = 42,
-        risk_free_rate::Float64 = 0.04,
-        dividend_yield::Float64 = 0.02,
-        volatility::Float64 = 0.20,
-        option_budget_pct::Float64 = 0.03
+        n_paths::Int=100000,
+        seed::Union{Int,Nothing}=42,
+        risk_free_rate::Float64=0.04,
+        dividend_yield::Float64=0.02,
+        volatility::Float64=0.20,
+        option_budget_pct::Float64=0.03,
     )
         risk_free_rate >= 0 || throw(ArgumentError("CRITICAL: risk_free_rate must be >= 0"))
         volatility >= 0 || throw(ArgumentError("CRITICAL: volatility must be >= 0"))
-        option_budget_pct >= 0 || throw(ArgumentError("CRITICAL: option_budget_pct must be >= 0"))
+        option_budget_pct >= 0 ||
+            throw(ArgumentError("CRITICAL: option_budget_pct must be >= 0"))
 
-        engine = MonteCarloEngine(n_paths=n_paths, seed=seed)
+        engine = MonteCarloEngine(; n_paths=n_paths, seed=seed)
         new(engine, risk_free_rate, dividend_yield, volatility, option_budget_pct)
     end
 end
-
 
 """
     FIAPriceResult
@@ -87,7 +93,6 @@ struct FIAPriceResult
     term_years::Int
 end
 
-
 """
     price(pricer::FIAPricer, product; premium=100.0) -> FIAPriceResult
 
@@ -107,7 +112,7 @@ Price a FIA product.
 # Returns
 - `FIAPriceResult`: Pricing results
 """
-function price(pricer::FIAPricer, product; premium::Float64 = 100.0)
+function price(pricer::FIAPricer, product; premium::Float64=100.0)
     term_years = product.term_years
     term_years > 0 || throw(ArgumentError("CRITICAL: term_years must be > 0"))
 
@@ -117,7 +122,7 @@ function price(pricer::FIAPricer, product; premium::Float64 = 100.0)
         pricer.risk_free_rate,
         pricer.dividend_yield,
         pricer.volatility,
-        Float64(term_years)
+        Float64(term_years),
     )
 
     # Determine crediting method and build payoff
@@ -144,7 +149,9 @@ function price(pricer::FIAPricer, product; premium::Float64 = 100.0)
 
     # Solve for fair cap and participation
     fair_cap = solve_fair_cap(pricer, Float64(term_years), option_budget, premium)
-    fair_participation = solve_fair_participation(pricer, Float64(term_years), option_budget, premium)
+    fair_participation = solve_fair_participation(
+        pricer, Float64(term_years), option_budget, premium
+    )
 
     # Present value: PV of floor + option value
     # [T1] PV = discount × premium × (1 + expected_credit)
@@ -159,10 +166,9 @@ function price(pricer::FIAPricer, product; premium::Float64 = 100.0)
         fair_cap,
         fair_participation,
         method,
-        term_years
+        term_years,
     )
 end
-
 
 """
     build_fia_payoff(product) -> (AbstractPayoff, Symbol)
@@ -186,13 +192,14 @@ function build_fia_payoff(product)
         return (payoff, :spread)
     else
         # [NEVER FAIL SILENTLY] No crediting method specified
-        throw(ArgumentError(
-            "CRITICAL: FIA product has no crediting method. " *
-            "Expected cap_rate, participation_rate, or spread_rate."
-        ))
+        throw(
+            ArgumentError(
+                "CRITICAL: FIA product has no crediting method. " *
+                "Expected cap_rate, participation_rate, or spread_rate.",
+            ),
+        )
     end
 end
-
 
 """
     solve_fair_cap(pricer, term_years, option_budget, premium) -> Float64
@@ -203,10 +210,7 @@ Solve for fair cap rate given option budget.
      Uses bisection on cap rate.
 """
 function solve_fair_cap(
-    pricer::FIAPricer,
-    term_years::Float64,
-    option_budget::Float64,
-    premium::Float64
+    pricer::FIAPricer, term_years::Float64, option_budget::Float64, premium::Float64
 )
     spot = premium  # Normalized
     r = pricer.risk_free_rate
@@ -248,7 +252,6 @@ function solve_fair_cap(
     return (low + high) / 2
 end
 
-
 """
     solve_fair_participation(pricer, term_years, option_budget, premium) -> Float64
 
@@ -257,10 +260,7 @@ Solve for fair participation rate given option budget.
 [T1] Participation = option_budget / ATM_call_value
 """
 function solve_fair_participation(
-    pricer::FIAPricer,
-    term_years::Float64,
-    option_budget::Float64,
-    premium::Float64
+    pricer::FIAPricer, term_years::Float64, option_budget::Float64, premium::Float64
 )
     spot = premium
     r = pricer.risk_free_rate
@@ -279,7 +279,6 @@ function solve_fair_participation(
     return option_budget / atm_call_pct
 end
 
-
 """
     calculate_option_budget(risk_free_rate, term_years; expense_rate=0.01) -> Float64
 
@@ -291,9 +290,7 @@ This is the spread the insurer earns on investing premiums at risk-free
 minus expenses.
 """
 function calculate_option_budget(
-    risk_free_rate::Float64,
-    term_years::Float64;
-    expense_rate::Float64 = 0.01
+    risk_free_rate::Float64, term_years::Float64; expense_rate::Float64=0.01
 )
     # Spread earned over term (simple approximation)
     spread = 1.0 - exp(-risk_free_rate * term_years)
