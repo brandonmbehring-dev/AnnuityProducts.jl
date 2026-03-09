@@ -12,6 +12,7 @@ jobs:
   test:
     name: Julia ${{ matrix.version }} - ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
+    continue-on-error: ${{ matrix.version == 'nightly' }}
     strategy:
       fail-fast: false
       matrix:
@@ -37,8 +38,8 @@ jobs:
         run: |
           julia --project=. -e '
             using Pkg
-            Pkg.add(url="https://github.com/brandonmbehring-dev/AnnuityData.jl")
-            Pkg.add(url="https://github.com/brandonmbehring-dev/AnnuityCore.jl")
+            Pkg.add(url="https://github.com/brandon-behring/AnnuityData.jl")
+            Pkg.add(url="https://github.com/brandon-behring/AnnuityCore.jl")
             Pkg.instantiate()
           '
 
