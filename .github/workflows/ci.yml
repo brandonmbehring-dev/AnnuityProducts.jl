@@ -20,6 +20,7 @@ jobs:
           - '1.11'
         os:
           - ubuntu-latest
+          - macos-latest
         include:
           - version: 'nightly'
             os: ubuntu-latest
@@ -32,6 +33,10 @@ jobs:
           version: ${{ matrix.version }}
 
       - uses: julia-actions/cache@v2
+
+      - name: Configure git credentials
+        run: |
+          git config --global url."https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/".insteadOf "https://github.com/"
 
       # Install dependencies from GitHub
       - name: Install dependencies
@@ -53,3 +58,46 @@ jobs:
         with:
           files: lcov.info
           token: ${{ secrets.CODECOV_TOKEN }}
+
+  # Code quality checks
+  quality:
+    name: Quality Checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: julia-actions/setup-julia@v2
+        with:
+          version: '1.11'
+
+      - uses: julia-actions/cache@v2
+
+      - name: Configure git credentials
+        run: |
+          git config --global url."https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/".insteadOf "https://github.com/"
+
+      - name: Install dependencies
+        run: |
+          julia --project=. -e '
+            using Pkg
+            Pkg.add(url="https://github.com/brandon-behring/AnnuityData.jl")
+            Pkg.add(url="https://github.com/brandon-behring/AnnuityCore.jl")
+            Pkg.instantiate()
+            Pkg.add(["Aqua", "JuliaFormatter"])
+          '
+
+      - name: Aqua.jl quality checks
+        run: |
+          julia --project=. -e '
+            using Aqua
+            using AnnuityProducts
+            Aqua.test_all(AnnuityProducts; ambiguities=false, stale_deps=(ignore=[:JuliaFormatter, :Aqua],), deps_compat=(check_extras=false,))
+          '
+
+      - name: Check formatting
+        run: |
+          julia --project=. -e '
+            using JuliaFormatter
+            result = format("src/", BlueStyle())
+            result || error("Files not formatted according to BlueStyle")
+          '
